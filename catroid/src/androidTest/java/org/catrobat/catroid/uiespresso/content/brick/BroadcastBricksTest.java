@@ -28,55 +28,53 @@ import android.support.test.InstrumentationRegistry;
 import org.catrobat.catroid.ProjectManager;
 import org.catrobat.catroid.R;
 import org.catrobat.catroid.common.LookData;
-import org.catrobat.catroid.common.ScreenValues;
 import org.catrobat.catroid.content.Project;
 import org.catrobat.catroid.content.Script;
-import org.catrobat.catroid.content.SingleSprite;
 import org.catrobat.catroid.content.Sprite;
 import org.catrobat.catroid.content.StartScript;
-import org.catrobat.catroid.content.bricks.AskBrick;
 import org.catrobat.catroid.content.bricks.BroadcastBrick;
 import org.catrobat.catroid.content.bricks.BroadcastReceiverBrick;
-import org.catrobat.catroid.content.bricks.ChangeColorByNBrick;
-import org.catrobat.catroid.content.bricks.ChangeXByNBrick;
 import org.catrobat.catroid.content.bricks.NextLookBrick;
 import org.catrobat.catroid.content.bricks.PlaceAtBrick;
-import org.catrobat.catroid.content.bricks.SetBackgroundBrick;
 import org.catrobat.catroid.content.bricks.SetSizeToBrick;
-import org.catrobat.catroid.content.bricks.WaitBrick;
-import org.catrobat.catroid.content.bricks.WhenBrick;
 import org.catrobat.catroid.content.bricks.WhenConditionBrick;
-import org.catrobat.catroid.content.bricks.WhenTouchDownBrick;
 import org.catrobat.catroid.io.StorageHandler;
-import org.catrobat.catroid.stage.StageActivity;
 import org.catrobat.catroid.ui.ScriptActivity;
 import org.catrobat.catroid.uiespresso.util.BaseActivityInstrumentationRule;
 import org.catrobat.catroid.uiespresso.util.UiTestUtils;
 import org.catrobat.catroid.uiespresso.util.matchers.StageMatchers;
-import org.catrobat.catroid.utils.UtilUi;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.File;
 
+import static android.support.test.espresso.Espresso.onData;
 import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.Espresso.pressBack;
+import static android.support.test.espresso.action.ViewActions.clearText;
 import static android.support.test.espresso.action.ViewActions.click;
+import static android.support.test.espresso.action.ViewActions.typeText;
+import static android.support.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.isFocusable;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
+import static android.support.test.espresso.matcher.ViewMatchers.withText;
 
 import static org.catrobat.catroid.uiespresso.content.brick.BrickTestUtils.checkIfBrickAtPositionShowsString;
-import static org.catrobat.catroid.uiespresso.content.brick.BrickTestUtils.createNewVariableOnSpinnerInitial;
-import static org.catrobat.catroid.uiespresso.content.brick.BrickTestUtils.createProjectAndGetStartScript;
-import static org.catrobat.catroid.uiespresso.content.brick.BrickTestUtils.enterStringInFormulaTextFieldOnBrickAtPosition;
-import static org.catrobat.catroid.uiespresso.content.brick.BrickTestUtils.enterValueInFormulaTextFieldOnBrickAtPosition;
+import static org.catrobat.catroid.uiespresso.content.brick.BrickTestUtils.checkIfSpinnerOnBrickAtPositionShowsString;
+import static org.catrobat.catroid.uiespresso.content.brick.BrickTestUtils.onScriptList;
+import static org.catrobat.catroid.uiespresso.util.UiTestUtils.getResourcesString;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.core.Is.is;
 
 public class BroadcastBricksTest {
-	private static final int PROJECT_WIDTH = 480;
-	private static final int PROJECT_HEIGHT = 800;
-
-	private int brickPosition;
+	private String defaultMessage = "defaultMessage";
+	private int broadcastSendPosition = 4;
+	private int broadcastReceivePosition = 5;
+	private byte[] red = {(byte) 237, (byte) 28, (byte) 36, (byte) 255};
+	private byte[] green = {(byte) 34, (byte) 177, (byte) 76, (byte) 255};
 
 	@Rule
 	public BaseActivityInstrumentationRule<ScriptActivity> baseActivityTestRule = new
@@ -84,62 +82,70 @@ public class BroadcastBricksTest {
 
 	@Before
 	public void setUp() throws Exception {
-		brickPosition = 1;
-		Script script = createProjectAndGetStartScriptWithImages("BroadcastBrickTest");
-		//script.addBrick(new ChangeColorByNBrick());
-
+		createProjectAndGetStartScriptWithImages("BroadcastBrickTest");
 		baseActivityTestRule.launchActivity(null);
+
+		onView(withId(R.id.brick_when_condition_edit_text)).perform(click());
+		onView(withId(R.id.formula_editor_keyboard_sensors)).perform(click());
+		onView(withText(getResourcesString(R.string.formula_editor_function_touched))).perform(click());
+		onView(withId(R.id.formula_editor_keyboard_ok)).perform(click());
+	}
+	@Test
+	public void checkBroadcastBricksStartUp() {
+		checkIfBrickAtPositionShowsString(0, R.string.brick_when_started);
+		checkIfBrickAtPositionShowsString(broadcastSendPosition, R.string.brick_broadcast);
+		checkIfBrickAtPositionShowsString(broadcastReceivePosition, R.string.brick_broadcast_receive);
 	}
 
 	@Test
-	public void testChangeColorByNBrick() {
-		int valToChange = 20;
+	public void checkBroadcastBricks() {
+		onView(withId(R.id.button_play)).perform(click());
 
+		onView(isFocusable()).check(matches(StageMatchers.isColorAtPx(red, 1, 1)));
+		onView(isFocusable()).perform(click());
+		onView(isFocusable()).check(matches(StageMatchers.isColorAtPx(green, 1, 1)));
+	}
 
-		createNewVariableOnSpinnerInitial(R.id.brick_ask_spinner, 3,"myvariable");
-	/*	onScriptList().atPosition(position).onChildView(withId(editTextResourceId))
-				.perform(click());
-		onView(withId( R.id.brick_when_condition_edit_text)).perform(click());*/
+	@Test
+	public void testRemoveUnusedMessagesBroadcastSend() {
+		String uselessMessage = "useless";
 
-
-		//enterStringInFormulaTextFieldOnBrickAtPosition("'myvariable'='ja'", R.id.brick_when_condition_edit_text, 4);
-
-
+		createNewMessageOnSpinner(R.id.brick_broadcast_spinner, broadcastSendPosition, uselessMessage);
+		clickSelectCheckSpinnerValueOnBrick(R.id.brick_broadcast_spinner, broadcastSendPosition, defaultMessage);
 
 		onView(withId(R.id.button_play)).perform(click());
-		byte[] blue = {0, (byte) 162, (byte) 232, (byte) 255};
-		byte[] red = {0, (byte) 237, (byte) 28, (byte) 36};
+		pressBack();
+		onView(withId(R.id.stage_dialog_button_back)).perform(click());
+		onScriptList().atPosition(broadcastSendPosition).onChildView(withId(R.id.brick_broadcast_spinner))
+				.perform(click());
 
+		onView(withText(uselessMessage)).check(doesNotExist());
 
-		onView(isFocusable())
-				.check(matches(StageMatchers.isColorAtPx(blue, 1, 1)));
+		pressBack();
 
-/*		onView(isFocusable()).perform(click());
-
-		onView(isFocusable())
-				.check(matches(StageMatchers.isColorAtPx(red, 1, 1)));*/
-
-
-	//	checkIfBrickAtPositionShowsString(0, R.string.brick_when_started);
-	//	checkIfBrickAtPositionShowsString(brickPosition, R.string.brick_change_color);
-		/*enterValueInFormulaTextFieldOnBrickAtPosition(valToChange, R.id.brick_change_color_by_edit_text,
-				brickPosition);*/
+		checkIfSpinnerOnBrickAtPositionShowsString(R.id.brick_broadcast_spinner, broadcastSendPosition, defaultMessage);
 	}
+
 	@Test
-	public void checkForBlueSpriteColor() {
+	public void testRemoveUnusedMessagesBroadcastReceive() {
+		String uselessMessage = "useless";
+		//prepareTest();
+		createNewMessageOnSpinner(R.id.brick_broadcast_receive_spinner, broadcastReceivePosition, uselessMessage);
+		clickSelectCheckSpinnerValueOnBrick(R.id.brick_broadcast_receive_spinner, broadcastReceivePosition,
+				defaultMessage);
 
+		onView(withId(R.id.button_play)).perform(click());
+		pressBack();
+		onView(withId(R.id.stage_dialog_button_back)).perform(click());
+		onScriptList().atPosition(broadcastReceivePosition).onChildView(withId(R.id.brick_broadcast_receive_spinner))
+				.perform(click());
 
-		checkIfBrickAtPositionShowsString(0, R.string.brick_when_started);
-		//brickPosition = 1;
+		onView(withText(uselessMessage)).check(doesNotExist());
 
-		//Project project = createProjectWithBlueSprite("blueProject");
-		//baseActivityTestRule.launchActivity(null);
+		pressBack();
 
-	//	byte[] blue = {0, (byte) 162, (byte) 232, (byte) 255};
-
-		//color matcher only accepts a GL20View, this can be aquired by getting the only focusable element in the stage
-	/*	onView(isFocusable())
-				.check(matches(StageMatchers.isColorAtPx(blue, 1, 1)));*/
+		checkIfSpinnerOnBrickAtPositionShowsString(R.id.brick_broadcast_receive_spinner, broadcastReceivePosition,
+				defaultMessage);
 	}
 
 	public Script createProjectAndGetStartScriptWithImages(String projectName) {
@@ -147,56 +153,41 @@ public class BroadcastBricksTest {
 		Sprite sprite = new Sprite("testSprite");
 		Script script = new StartScript();
 
-
-
 		sprite.addScript(script);
-
-		// blue Sprite
-		//Sprite blueSprite = new SingleSprite("blueSprite");
-		//StartScript blueStartScript = new StartScript();
-		LookData blueLookData = new LookData();
-		String blueImageName = "blue_image.bmp";
-		blueLookData.setLookName(blueImageName);
-		sprite.getLookDataList().add(blueLookData);
 
 		LookData redLookData = new LookData();
 		String redImageName = "red_image.bmp";
 		redLookData.setLookName(redImageName);
 		sprite.getLookDataList().add(redLookData);
 
+		LookData greenLookData = new LookData();
+		String greenImageName = "green_image.bmp";
+		greenLookData.setLookName(greenImageName);
+		sprite.getLookDataList().add(greenLookData);
 
 		script.addBrick(new PlaceAtBrick(0, 0));
 		script.addBrick(new SetSizeToBrick(5000));
-		script.addBrick(new AskBrick("Bereit zum Testen?"));
 		script.addBrick(new WhenConditionBrick());
-		//script.addBrick(new WhenTouchDownBrick());
-		script.addBrick(new WaitBrick(5000));
-		script.addBrick(new BroadcastBrick("xx"));
-		script.addBrick(new BroadcastReceiverBrick("xx"));
-		//script.addBrick(new WaitBrick(3000));
+		script.addBrick(new BroadcastBrick(defaultMessage));
+		script.addBrick(new BroadcastReceiverBrick(defaultMessage));
 		script.addBrick(new NextLookBrick());
-		//script.addBrick(new SetBackgroundBrick());
-		//script.addBrick(new  )
 		sprite.addScript(script);
 
 		project.getDefaultScene().addSprite(sprite);
 
 		StorageHandler.getInstance().saveProject(project);
-		File blueImageFile = UiTestUtils.saveFileToProject(project.getName(), project.getDefaultScene().getName(),
-				blueImageName,
-				org.catrobat.catroid.test.R.raw.blue_image, InstrumentationRegistry.getContext(),
-				UiTestUtils.FileTypes.IMAGE);
-
-
 		File redImageFile = UiTestUtils.saveFileToProject(project.getName(), project.getDefaultScene().getName(),
 				redImageName,
 				org.catrobat.catroid.test.R.raw.red_image, InstrumentationRegistry.getContext(),
 				UiTestUtils.FileTypes.IMAGE);
 
-		blueLookData.setLookFilename(blueImageFile.getName());
+		File greenImageFile = UiTestUtils.saveFileToProject(project.getName(), project.getDefaultScene().getName(),
+				greenImageName,
+				org.catrobat.catroid.test.R.raw.green_image, InstrumentationRegistry.getContext(),
+				UiTestUtils.FileTypes.IMAGE);
+
 		redLookData.setLookFilename(redImageFile.getName());
-
-
+		greenLookData.setLookFilename(greenImageFile.getName());
 
 		project.getDefaultScene().addSprite(sprite);
 		ProjectManager.getInstance().setProject(project);
@@ -204,42 +195,25 @@ public class BroadcastBricksTest {
 		return script;
 	}
 
+	public static void createNewMessageOnSpinner(int spinnerResourceId, int position, String massage) {
+		onScriptList().atPosition(position).onChildView(withId(spinnerResourceId))
+				.perform(click());
 
-	public Project createProjectWithBlueSprite(String projectName) {
-		ScreenValues.SCREEN_HEIGHT = PROJECT_HEIGHT;
-		ScreenValues.SCREEN_WIDTH = PROJECT_WIDTH;
+		onView(withText(R.string.brick_variable_spinner_create_new_variable))
+				.perform(click());
 
-		Project project = new Project(null, projectName);
+		onView(withId(R.id.edit_text)).perform(click());
+		onView(withId(R.id.edit_text)).perform(clearText());
+		onView(withId(R.id.edit_text)).perform(typeText(massage));
+		onView(withId(android.R.id.button1)).perform(click());
+		// todo: CAT-2359 to fix this:
+		checkIfSpinnerOnBrickAtPositionShowsString(spinnerResourceId, position, massage);
+	}
 
-		// blue Sprite
-		Sprite blueSprite = new SingleSprite("blueSprite");
-		StartScript blueStartScript = new StartScript();
-		LookData blueLookData = new LookData();
-		String blueImageName = "blue_image.bmp";
-
-		blueLookData.setLookName(blueImageName);
-
-		blueSprite.getLookDataList().add(blueLookData);
-
-		blueStartScript.addBrick(new PlaceAtBrick(0, 0));
-		blueStartScript.addBrick(new SetSizeToBrick(5000));
-		blueSprite.addScript(blueStartScript);
-
-		project.getDefaultScene().addSprite(blueSprite);
-
-		StorageHandler.getInstance().saveProject(project);
-		File blueImageFile = UiTestUtils.saveFileToProject(project.getName(), project.getDefaultScene().getName(),
-				blueImageName,
-				org.catrobat.catroid.test.R.raw.blue_image, InstrumentationRegistry.getContext(),
-				UiTestUtils.FileTypes.IMAGE);
-
-		blueLookData.setLookFilename(blueImageFile.getName());
-
-	/*	StorageHandler.getInstance().saveProject(project);
-		ProjectManager.getInstance().setProject(project);
-		ProjectManager.getInstance().setCurrentSprite(blueSprite);
-		UtilUi.updateScreenWidthAndHeight(InstrumentationRegistry.getContext());*/
-
-		return project;
+	public static void clickSelectCheckSpinnerValueOnBrick(int spinnerResourceId, int position, String
+			stringResource) {
+		onScriptList().atPosition(position).onChildView(withId(spinnerResourceId)).perform(click());
+		onData(allOf(is(instanceOf(String.class)), is(stringResource))).perform(click());
+		checkIfSpinnerOnBrickAtPositionShowsString(spinnerResourceId, position, stringResource);
 	}
 }
