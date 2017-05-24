@@ -20,15 +20,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.catrobat.catroid.uiespresso.annotations;
 
-package org.catrobat.catroid.uiespresso.category;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.junit.experimental.categories.Categories;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-
-@RunWith(Categories.class)
-@Categories.IncludeCategory({LevelSmoke.class})
-@Suite.SuiteClasses(AllEspressoTestSuite.class)
-public class SmokeTestSuite {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Device {
 }
